@@ -8,4 +8,8 @@
     <UseWPF>true</UseWPF>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="Zeroconf" Version="3.7.16" />
+  </ItemGroup>
+
 </Project>
