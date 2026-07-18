@@ -1,15 +1,19 @@
-﻿using System.Net.NetworkInformation;
+﻿using System.Diagnostics;
+using System.Net.Mail;
+using System.Net.NetworkInformation;
+using System.Net.Sockets;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using Zeroconf;
+using System.IO;
+using LibVLCSharp.Shared;
 
 namespace Mirroring_iPhone
 {
@@ -18,54 +22,40 @@ namespace Mirroring_iPhone
     /// </summary>
     public partial class MainWindow : Window
     {
+        private LibVLC _libVLC;
+        private MediaPlayer _mediaPlayer;
+
         public MainWindow()
         {
             InitializeComponent();
 
-            //画面がロードされたらAirPlayの通知を開始する
-            this.Loaded += MainWindow_Loaded;
+            // 1. VLCエンジンの初期化
+            Core.Initialize();
+            _libVLC = new LibVLC();
+            _mediaPlayer = new MediaPlayer(_libVLC);
+
+            // 2. XAMLに配置した「VlcPlayer」にこのプレイヤーを結びつける
+            VlcPlayer.MediaPlayer = _mediaPlayer;
+
+            // 3. アプリが閉じたら安全に解放する設定
+            this.Unloaded += MainWindow_Unloaded;
+
+            // 💡 テスト用（あとでAirPlayストリームのURLに書き換えます）
+            // StartStreaming("rtsp://サンプルURL");
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        public void StartStreaming(string url)
         {
-            try
-            {
-                StartAirPlayAdvertisement();
-                StatusText.Text = "iPhoneの「画面ミラーリング」を開いて確認してください...";
-            }
-            catch (Exception ex)
-            {
-                StatusText.Text = "エラーが発生しました: " + ex.Message;
-            }
+            // 映像ストリームを受け取って再生を開始するメソッド
+            var media = new Media(_libVLC, new Uri(url));
+            _mediaPlayer.Play(media);
         }
 
-        private void StartAirPlayAdvertisement()
+        private void MainWindow_Unloaded(object sender, RoutedEventArgs e)
         {
-            string MacAddress = GetMacAddress();
-            if(string.IsNullOrEmpty(MacAddress))
-            {
-                throw new Exception("MACアドレスの取得に失敗しました。");
-            }
-
-            
+            // メモリを綺麗に解放する
+            _mediaPlayer?.Dispose();
+            _libVLC?.Dispose();
         }
-
-        //MACアドレスを取得するメソッド
-        private string GetMacAddress()
-        {   //パソコンにあるすべてのネットワーク機器（カード）をリストアップ
-            foreach (NetworkInterface nic in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                //通信可能なネットワーク機器で、ループバックでないものを選択
-                if (nic.OperationalStatus == OperationalStatus.Up &&
-                    nic.NetworkInterfaceType != NetworkInterfaceType.Loopback)
-                {
-                    return nic.GetPhysicalAddress().ToString();
-                }
-            }
-
-            return string.Empty;
-        }
-
-
     }
 }

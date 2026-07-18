@@ -5,19 +5,11 @@
        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
        xmlns:local="clr-namespace:Mirroring_iPhone"
        mc:Ignorable="d"
+       xmlns:vlc="clr-namespace:LibVLCSharp.WPF;assembly=LibVLCSharp.WPF"
        Title="MainWindow" Height="700" Width="450"
         Background="#1E1E1E">
     <Grid>
-        <!-- 映像を表示するためのエリア -->
-        <Image x:Name="PlayerElement" Stretch="Uniform" Margin="10"/>
-
-        <!-- 接続待ちなどの状態を表示するテキスト -->
-        <TextBlock x:Name="StatusText" 
-                   Text="iPhoneからの接続を待っています..." 
-                   Foreground="White" 
-                   FontSize="16" 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Center"/>
+        <vlc:VideoView x:Name="VlcPlayer" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
 
     </Grid>
 </Window>
