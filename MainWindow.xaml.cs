@@ -42,6 +42,12 @@ namespace Mirroring_iPhone
 
             // 💡 テスト用（あとでAirPlayストリームのURLに書き換えます）
             // StartStreaming("rtsp://サンプルURL");
+
+            var airPlay = new AirPlayReceiver.AirPlayService();
+            _ = airPlay.StartBroadcasting(); // 広告開始
+
+            var server = new AirPlayReceiver.AirPlayServer();
+            server.Start();
         }
 
         public void StartStreaming(string url)
@@ -49,6 +55,15 @@ namespace Mirroring_iPhone
             // 映像ストリームを受け取って再生を開始するメソッド
             var media = new Media(_libVLC, new Uri(url));
             _mediaPlayer.Play(media);
+        }
+
+        private async void StartAirPlayAdvertisement()
+        {
+            // iPhoneがあなたのPCを "MyPC-Mirroring" として認識するように広告を出します
+            // ※実際にはサービス名（_airplay._tcpなど）の詳細な設定が必要です
+            await Task.Run(() => {
+                Console.WriteLine("AirPlay 待受サーバーをポート7000で起動しました...");
+            });
         }
 
         private void MainWindow_Unloaded(object sender, RoutedEventArgs e)

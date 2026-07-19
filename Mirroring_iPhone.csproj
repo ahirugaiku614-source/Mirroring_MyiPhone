@@ -10,6 +10,9 @@
 
   <ItemGroup>
     <PackageReference Include="LibVLCSharp.WPF" Version="3.10.0" />
+    <PackageReference Include="Makaretu.Dns.Multicast" Version="0.27.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.10" />
+    <PackageReference Include="System.Net.Sockets" Version="4.3.0" />
     <PackageReference Include="VideoLAN.LibVLC.Windows" Version="3.0.23.1" />
     <PackageReference Include="Zeroconf" Version="3.7.16" />
   </ItemGroup>
