@@ -48,11 +48,11 @@ namespace Mirroring_iPhone.AirPlayReceiver
                 _discovery.Advertise(raopProfile);
                 _mdns.Start();
 
-                MessageBox.Show("✅ mDNS広告（完全版）の開始に成功しました！\nコントロールセンターの「画面ミラーリング」を確認してください。", "通信結果");
+                System.Windows.MessageBox.Show("✅ mDNS広告（完全版）の開始に成功しました！\nコントロールセンターの「画面ミラーリング」を確認してください。", "通信結果");
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"❌ mDNSエラーが発生しました:\n{ex.Message}", "エラー");
+                System.Windows.MessageBox.Show($"❌ mDNSエラーが発生しました:\n{ex.Message}", "エラー");
             }
         }
     }

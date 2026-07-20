@@ -1,76 +1,80 @@
-﻿using System.Diagnostics;
-using System.Net.Mail;
-using System.Net.NetworkInformation;
-using System.Net.Sockets;
-using System.Text;
+﻿using System;
+using System.Diagnostics;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Zeroconf;
-using System.IO;
 using LibVLCSharp.Shared;
 
 namespace Mirroring_iPhone
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
     public partial class MainWindow : Window
     {
         private LibVLC _libVLC;
         private MediaPlayer _mediaPlayer;
+        private Process _uxPlayProcess;
 
         public MainWindow()
         {
             InitializeComponent();
 
-            // 1. VLCエンジンの初期化
+            // LibVLC（動画再生エンジン）の初期化
             Core.Initialize();
             _libVLC = new LibVLC();
             _mediaPlayer = new MediaPlayer(_libVLC);
 
-            // 2. XAMLに配置した「VlcPlayer」にこのプレイヤーを結びつける
+            // 画面のコントロール（VlcPlayer）に再生エンジンを紐付ける
             VlcPlayer.MediaPlayer = _mediaPlayer;
 
-            // 3. アプリが閉じたら安全に解放する設定
+            this.Loaded += MainWindow_Loaded;
             this.Unloaded += MainWindow_Unloaded;
-
-            // 💡 テスト用（あとでAirPlayストリームのURLに書き換えます）
-            // StartStreaming("rtsp://サンプルURL");
-
-            var airPlay = new AirPlayReceiver.AirPlayService();
-            _ = airPlay.StartBroadcasting(); // 広告開始
-
-            var server = new AirPlayReceiver.AirPlayServer();
-            server.Start();
         }
 
-        public void StartStreaming(string url)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
         {
-            // 映像ストリームを受け取って再生を開始するメソッド
-            var media = new Media(_libVLC, new Uri(url));
-            _mediaPlayer.Play(media);
-        }
+            // 1. UxPlayを「画面なし・データ転送モード」で起動
+            // -nh: 本体の画面（ウィンドウ）を作らない
+            // -asink dummy -vsink dummy: 映像と音声をPC画面に出さず、内部処理に回す
+             string uxPlayPath = System.IO.Path.Combine(
+                 AppDomain.CurrentDomain.BaseDirectory,
+                "uxplay",
+                "uxplay-windows.exe"
+             );
 
-        private async void StartAirPlayAdvertisement()
-        {
-            // iPhoneがあなたのPCを "MyPC-Mirroring" として認識するように広告を出します
-            // ※実際にはサービス名（_airplay._tcpなど）の詳細な設定が必要です
-            await Task.Run(() => {
-                Console.WriteLine("AirPlay 待受サーバーをポート7000で起動しました...");
-            });
+            _uxPlayProcess = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = uxPlayPath,
+                    Arguments = "-nh -asink dummy -vsink dummy",
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+            _uxPlayProcess.Start();
+
+            // 2. 自作アプリ内のVLCプレイヤーで、UxPlayからの映像ストリームを受信開始
+            // ※UxPlayが標準で配信するネットワークアドレス（RTSPプロトコルなど）を指定します
+            // 一般的なUxPlayの配信ストリーム、またはlocalhostのミラーリングポートをキャッチします
+            using (var media = new Media(_libVLC, new Uri("rtsp://127.0.0.1:7000/stream")))
+            {
+                _mediaPlayer.Play(media);
+            }
         }
 
         private void MainWindow_Unloaded(object sender, RoutedEventArgs e)
         {
-            // メモリを綺麗に解放する
+            // アプリ終了時にVLCとUxPlayを安全に解放・終了する
+            _mediaPlayer?.Stop();
             _mediaPlayer?.Dispose();
             _libVLC?.Dispose();
+
+            try
+            {
+                if (_uxPlayProcess != null && !_uxPlayProcess.HasExited)
+                {
+                    _uxPlayProcess.Kill();
+                    _uxPlayProcess.Dispose();
+                }
+            }
+            catch { }
         }
     }
 }
