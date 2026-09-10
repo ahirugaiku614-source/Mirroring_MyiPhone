@@ -11,6 +11,8 @@ namespace Mirroring_iPhone
         private MediaPlayer _mediaPlayer;
         private Process _uxPlayProcess;
 
+        private bool _isServerRunning = false;
+
         public MainWindow()
         {
             InitializeComponent();
@@ -23,13 +25,25 @@ namespace Mirroring_iPhone
             // 画面のコントロール（VlcPlayer）に再生エンジンを紐付ける
             VlcPlayer.MediaPlayer = _mediaPlayer;
 
-            this.Loaded += MainWindow_Loaded;
+            
             this.Unloaded += MainWindow_Unloaded;
         }
 
-        private void MainWindow_Loaded(object sender, RoutedEventArgs e)
+        private void ToggleMirroringButton_Click(object sender, RoutedEventArgs e)
         {
-            // 1. UxPlayを「画面なし・データ転送モード」で起動
+            if (!_isServerRunning)
+            {
+                StartMirroringServer();
+            }
+            else
+            {
+                StopMirroringServer();
+            }
+        }
+
+        private void StartMirroringServer()
+        {
+            //  UxPlayを「画面なし・データ転送モード」で起動
             // -nh: 本体の画面（ウィンドウ）を作らない
             // -asink dummy -vsink dummy: 映像と音声をPC画面に出さず、内部処理に回す
              string uxPlayPath = System.IO.Path.Combine(
@@ -50,13 +64,33 @@ namespace Mirroring_iPhone
             };
             _uxPlayProcess.Start();
 
-            // 2. 自作アプリ内のVLCプレイヤーで、UxPlayからの映像ストリームを受信開始
-            // ※UxPlayが標準で配信するネットワークアドレス（RTSPプロトコルなど）を指定します
-            // 一般的なUxPlayの配信ストリーム、またはlocalhostのミラーリングポートをキャッチします
+            //  自作アプリ内のVLCプレイヤーで、UxPlayからの映像ストリームを受信開始
+            // ※UxPlayが標準で配信するネットワークアドレス（RTSPプロトコルなど）を指定
+         
             using (var media = new Media(_libVLC, new Uri("rtsp://127.0.0.1:7000/stream")))
             {
                 _mediaPlayer.Play(media);
             }
+        }
+
+        private void StopMirroringServer()
+        {
+            _mediaPlayer?.Stop();
+
+            try
+            {
+                if (_uxPlayProcess != null && !_uxPlayProcess.HasExited)
+                {
+                    _uxPlayProcess.Kill();
+                    _uxPlayProcess.Dispose();
+                    _uxPlayProcess = null;
+                }
+            }
+            catch { }
+
+            _isServerRunning = false;
+            ToggleMirroringButton.Content = "ミラーリング開始 (信号送信)";
+            ToggleMirroringButton.Background = new System.Windows.Media.BrushConverter().ConvertFromString("#007ACC") as System.Windows.Media.Brush;
         }
 
         private void MainWindow_Unloaded(object sender, RoutedEventArgs e)

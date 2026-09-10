@@ -11,5 +11,15 @@
     <Grid>
         <!-- WindowsFormsHostを削除し、VLCのビデオ表示領域を配置 -->
         <vlc:VideoView x:Name="VlcPlayer" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" />
+
+        <Button x:Name="ToggleMirroringButton" 
+                Grid.Row="1" 
+                Content="ミラーリング開始 (信号送信)" 
+                Height="45" 
+                Margin="10" 
+                FontSize="16" 
+                Background="#007ACC" 
+                Foreground="White" 
+                Click="ToggleMirroringButton_Click"/>
     </Grid>
 </Window>
