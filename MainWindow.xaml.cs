@@ -41,36 +41,63 @@ namespace Mirroring_iPhone
             }
         }
 
-        private void StartMirroringServer()
+        private async void StartMirroringServer()
         {
-            //  UxPlayを「画面なし・データ転送モード」で起動
-            // -nh: 本体の画面（ウィンドウ）を作らない
-            // -asink dummy -vsink dummy: 映像と音声をPC画面に出さず、内部処理に回す
-             string uxPlayPath = System.IO.Path.Combine(
-                 AppDomain.CurrentDomain.BaseDirectory,
-                "uxplay",
-                "uxplay-windows.exe"
-             );
 
-            _uxPlayProcess = new Process
+            try
             {
-                StartInfo = new ProcessStartInfo
+
+                StopMirroringServer();
+
+                //  UxPlayを「画面なし・データ転送モード」で起動
+                // -nh: 本体の画面（ウィンドウ）を作らない
+                // -asink dummy -vsink dummy: 映像と音声をPC画面に出さず、内部処理に回す
+                string uxPlayPath = System.IO.Path.Combine(
+                    AppDomain.CurrentDomain.BaseDirectory,
+                   "uxplay",
+                   "uxplay-windows.exe"
+                );
+
+                _uxPlayProcess = new Process
                 {
-                    FileName = uxPlayPath,
-                    Arguments = "-nh -asink dummy -vsink dummy",
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
-            };
-            _uxPlayProcess.Start();
+                    StartInfo = new ProcessStartInfo
+                    {
+                        FileName = uxPlayPath,
+                        Arguments = "-nh -asink dummy -vsink dummy",
+                        UseShellExecute = false,
+                        CreateNoWindow = true
+                    }
+                };
+                _uxPlayProcess.Start();
 
-            //  自作アプリ内のVLCプレイヤーで、UxPlayからの映像ストリームを受信開始
-            // ※UxPlayが標準で配信するネットワークアドレス（RTSPプロトコルなど）を指定
-         
-            using (var media = new Media(_libVLC, new Uri("rtsp://127.0.0.1:7000/stream")))
-            {
-                _mediaPlayer.Play(media);
+                //  自作アプリ内のVLCプレイヤーで、UxPlayからの映像ストリームを受信開始
+                // ※UxPlayが標準で配信するネットワークアドレス（RTSPプロトコルなど）を指定
+
+                using (var media = new Media(_libVLC, new Uri("rtsp://127.0.0.1:7000/stream")))
+                {
+                    _mediaPlayer.Play(media);
+                }
+
+                //UxPlayがポートを開設して通信準備が整うまで1.5秒ほど待機する
+                await System.Threading.Tasks.Task.Delay(1500);
+
+                // VLCでストリームの受信用準備
+                using (var media = new Media(_libVLC, new Uri("rtsp://127.0.0.1:7000/stream")))
+                {
+                    _mediaPlayer.Play(media);
+                }
+
+                _isServerRunning = true;
+                ToggleMirroringButton.Content = "ミラーリング停止 (信号オフ)";
+                ToggleMirroringButton.Background = System.Windows.Media.Brushes.Crimson;
             }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"起動エラー: {ex.Message}");
+            }
+
+
+
         }
 
         private void StopMirroringServer()

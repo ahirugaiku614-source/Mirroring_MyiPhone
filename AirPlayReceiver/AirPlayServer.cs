@@ -67,7 +67,7 @@ namespace Mirroring_iPhone.AirPlayReceiver
                                       $"Server: AirTunes/220.68\r\n\r\n";
 
                     await writer.WriteAsync(response);
-                    Debug.WriteLine($"--- 💻 PCからの返信 ---\nRTSP/1.0 200 OK (CSeq: {cseq}) を返しました。");
+                    Debug.WriteLine($"---  PCからの返信 ---\nRTSP/1.0 200 OK (CSeq: {cseq}) を返しました。");
                 }
             }
             catch (Exception ex)
